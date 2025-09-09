@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "server.js",
+      "src": "api/index.js",
       "use": "@vercel/node"
     }
   ],
@@ -11,18 +11,27 @@
       "src": "/uploads/(.*)",
       "dest": "/uploads/$1",
       "headers": {
-        "Cache-Control": "public, max-age=31536000, immutable"
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Access-Control-Allow-Origin": "*"
+      }
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
       }
     },
     {
       "src": "/(.*)",
-      "dest": "/server.js"
+      "dest": "/api/index.js"
     }
   ],
   "env": {
     "NODE_ENV": "production",
     "MONGO_URI": "mongodb+srv://muhammadmuazahmed_db_user:wEbhv3c7Z0x93K0m@cluster0.wdbn9ei.mongodb.net/artmarketplace",
-    "JWT_SECRET": "your_super_secret_jwt_key_here_make_it_long_and_secure_123456789",
-    "PORT": "5000"
+    "JWT_SECRET": "your_super_secret_jwt_key_here_make_it_long_and_secure_123456789"
   }
 }
