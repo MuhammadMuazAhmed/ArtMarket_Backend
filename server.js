@@ -130,13 +130,11 @@ app.use((error, req, res, next) => {
 });
 
 // ===========================================
-// SERVER STARTUP
+// HEALTH CHECK ROUTE
 // ===========================================
-
-app.listen(config.PORT, () => {
-  console.log(`🚀 Server running on port ${config.PORT}`);
-  console.log(`🌍 Environment: ${config.NODE_ENV}`);
-  console.log(
-    `🔒 Security features: Helmet, CORS, Rate Limiting, XSS Protection`
-  );
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "ok", message: "Server is running" });
 });
+
+// Export the Express app for Vercel
+export default app;
