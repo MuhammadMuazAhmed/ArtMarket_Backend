@@ -4,10 +4,6 @@ import express from "express";
 import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
-import dotenv from "dotenv";
-
-// Load environment variables
-dotenv.config();
 
 // Import security configurations
 import {
@@ -23,6 +19,9 @@ import {
 
 // Import cors for CORS handling
 import cors from "cors";
+
+// Import environment configuration
+import config from "./config/env.js";
 
 // Import routes
 import authRoutes from "./routes/authRoutes.js";
@@ -87,7 +86,8 @@ app.use(
 
 mongoose
   .connect(config.MONGO_URI, {
-    serverSelectionTimeoutMS: 5000,
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
   })
   .then(() => console.log("✅ MongoDB connected successfully"))
   .catch((err) => {
@@ -119,58 +119,22 @@ app.use((req, res) => {
 // Global error handler
 app.use((error, req, res, next) => {
   console.error("Global error handler:", error);
+
+  // Don't leak error details in production
+  const isProduction = config.NODE_ENV === "production";
+
   res.status(error.status || 500).json({
-    error:
-      process.env.NODE_ENV === "production"
-        ? "Internal server error"
-        : error.message,
-    ...(process.env.NODE_ENV === "production" ? {} : { stack: error.stack }),
+    error: isProduction ? "Internal server error" : error.message,
+    ...(isProduction ? {} : { stack: error.stack }),
   });
 });
 
 // ===========================================
 // HEALTH CHECK ROUTE
 // ===========================================
-app.get("/api/health", async (req, res) => {
-  try {
-    // Check MongoDB connection
-    if (mongoose.connection.readyState !== 1) {
-      await mongoose.connect(process.env.MONGO_URI, {
-        serverSelectionTimeoutMS: 5000,
-      });
-    }
-    res.status(200).json({
-      status: "ok",
-      message: "Server is running",
-      mongo:
-        mongoose.connection.readyState === 1 ? "connected" : "disconnected",
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message:
-        process.env.NODE_ENV === "production" ? "Server error" : error.message,
-    });
-  }
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "ok", message: "Server is running" });
 });
 
-// Handle MongoDB connection for serverless environment
-const connectDB = async () => {
-  try {
-    if (mongoose.connection.readyState !== 1) {
-      await mongoose.connect(process.env.MONGO_URI, {
-        serverSelectionTimeoutMS: 5000,
-      });
-    }
-  } catch (error) {
-    console.error("MongoDB connection error:", error);
-  }
-};
-
-// Connect to MongoDB before handling requests
-app.use(async (req, res, next) => {
-  await connectDB();
-  next();
-});
-
+// Export the Express app for Vercel
 export default app;
