@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index.js",
+      "src": "server.js",
       "use": "@vercel/node"
     }
   ],
@@ -16,13 +16,13 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/api/index.js"
+      "dest": "/server.js"
     }
   ],
   "env": {
     "NODE_ENV": "production",
     "MONGO_URI": "mongodb+srv://muhammadmuazahmed_db_user:wEbhv3c7Z0x93K0m@cluster0.wdbn9ei.mongodb.net/artmarketplace",
     "JWT_SECRET": "your_super_secret_jwt_key_here_make_it_long_and_secure_123456789",
-    "CORS_ORIGINS": "https://art-market-tau.vercel.app,https://art-market-frontend.vercel.app"
+    "PORT": "5000"
   }
 }
