@@ -1,12 +1,11 @@
 // backend/server.js
 
-import express from "express";
-import mongoose from "mongoose";
-import path from "path";
-import { fileURLToPath } from "url";
+const express = require("express");
+const mongoose = require("mongoose");
+const path = require("path");
 
 // Import security configurations
-import {
+const {
   helmetConfig,
   corsOptions,
   sanitizeData,
@@ -15,23 +14,21 @@ import {
   apiRateLimit,
   authRateLimit,
   uploadRateLimit,
-} from "./config/security.js";
+} = require("./config/security.js");
 
 // Import cors for CORS handling
-import cors from "cors";
+const cors = require("cors");
 
 // Import environment configuration
-import config from "./config/env.js";
+const config = require("./config/env.js");
 
 // Import routes
-import authRoutes from "./routes/authRoutes.js";
-import artworkRoutes from "./routes/artworkRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
-import purchaseRoutes from "./routes/purchaseRoutes.js";
+const authRoutes = require("./routes/authRoutes.js");
+const artworkRoutes = require("./routes/artworkRoutes.js");
+const userRoutes = require("./routes/userRoutes.js");
+const purchaseRoutes = require("./routes/purchaseRoutes.js");
 
-// Get current directory name
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// __dirname is already available in CommonJS
 
 // Initialize app
 const app = express();
@@ -137,4 +134,4 @@ app.get("/api/health", (req, res) => {
 });
 
 // Export the Express app for Vercel
-export default app;
+module.exports = app;
