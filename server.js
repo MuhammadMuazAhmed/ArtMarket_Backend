@@ -103,14 +103,26 @@ try {
 // API ROUTES
 // ===========================================
 
+// Health Check Route (before other routes)
+app.get("/api/health", (req, res) => {
+  const dbStatus =
+    mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+
+  res.status(200).json({
+    status: "ok",
+    message: "Server is running",
+    database: {
+      status: dbStatus,
+      host: mongoose.connection.host,
+    },
+    environment: process.env.NODE_ENV || "development",
+  });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/artworks", artworkRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/purchases", purchaseRoutes);
-
-// ===========================================
-// ERROR HANDLING MIDDLEWARE
-// ===========================================
 
 // Root route handler
 app.get("/", (req, res) => {
@@ -126,6 +138,10 @@ app.get("/", (req, res) => {
     },
   });
 });
+
+// ===========================================
+// ERROR HANDLING MIDDLEWARE
+// ===========================================
 
 // 404 handler
 app.use((req, res) => {
@@ -146,24 +162,6 @@ app.use((error, req, res, next) => {
   res.status(error.status || 500).json({
     error: isProduction ? "Internal server error" : error.message,
     ...(isProduction ? {} : { stack: error.stack }),
-  });
-});
-
-// ===========================================
-// HEALTH CHECK ROUTE
-// ===========================================
-app.get("/api/health", (req, res) => {
-  const dbStatus =
-    mongoose.connection.readyState === 1 ? "connected" : "disconnected";
-
-  res.status(200).json({
-    status: "ok",
-    message: "Server is running",
-    database: {
-      status: dbStatus,
-      host: mongoose.connection.host,
-    },
-    environment: process.env.NODE_ENV || "development",
   });
 });
 
