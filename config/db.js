@@ -1,14 +1,8 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI, {
-      // These options are no longer needed in newer versions of Mongoose
-      // but adding them for backwards compatibility
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-
+    const conn = await mongoose.connect(process.env.MONGO_URI);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
 
     // Error handler after initial connection
@@ -26,10 +20,13 @@ const connectDB = async () => {
       await mongoose.connection.close();
       process.exit(0);
     });
+
+    return conn;
   } catch (error) {
     console.error(`Error: ${error.message}`);
-    process.exit(1);
+    // Don't exit the process, let the caller handle the error
+    throw error;
   }
 };
 
-module.exports = connectDB;
+export default connectDB;
