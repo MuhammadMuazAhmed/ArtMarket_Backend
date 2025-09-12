@@ -37,7 +37,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // Trust proxy - required for rate limiting behind reverse proxies like Vercel
-app.set('trust proxy', 1);
+app.set("trust proxy", 1);
 
 // ===========================================
 // SECURITY MIDDLEWARES (ORDER MATTERS!)
@@ -87,16 +87,17 @@ app.use(
 // DATABASE CONNECTION
 // ===========================================
 
-mongoose
-  .connect(config.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("✅ MongoDB connected successfully"))
-  .catch((err) => {
-    console.error("❌ MongoDB connection error:", err);
+// Initialize MongoDB connection
+try {
+  await mongoose.connect(config.MONGO_URI);
+  console.log("✅ MongoDB connected successfully");
+} catch (err) {
+  console.error("❌ MongoDB connection error:", err);
+  // Don't exit the process on connection error in production
+  if (process.env.NODE_ENV !== "production") {
     process.exit(1);
-  });
+  }
+}
 
 // ===========================================
 // API ROUTES
@@ -112,7 +113,7 @@ app.use("/api/purchases", purchaseRoutes);
 // ===========================================
 
 // Root route handler
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   res.json({
     message: "Art Market API Server",
     version: "1.0.0",
@@ -121,8 +122,8 @@ app.get('/', (req, res) => {
       auth: "/api/auth/*",
       artworks: "/api/artworks/*",
       users: "/api/users/*",
-      purchases: "/api/purchases/*"
-    }
+      purchases: "/api/purchases/*",
+    },
   });
 });
 
@@ -130,7 +131,8 @@ app.get('/', (req, res) => {
 app.use((req, res) => {
   res.status(404).json({
     error: "Route not found",
-    message: "The requested endpoint does not exist. Available endpoints: /api/health, /api/auth/*, /api/artworks/*, /api/users/*, /api/purchases/*",
+    message:
+      "The requested endpoint does not exist. Available endpoints: /api/health, /api/auth/*, /api/artworks/*, /api/users/*, /api/purchases/*",
   });
 });
 
@@ -151,7 +153,18 @@ app.use((error, req, res, next) => {
 // HEALTH CHECK ROUTE
 // ===========================================
 app.get("/api/health", (req, res) => {
-  res.status(200).json({ status: "ok", message: "Server is running" });
+  const dbStatus =
+    mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+
+  res.status(200).json({
+    status: "ok",
+    message: "Server is running",
+    database: {
+      status: dbStatus,
+      host: mongoose.connection.host,
+    },
+    environment: process.env.NODE_ENV || "development",
+  });
 });
 
 // Export the Express app for Vercel
