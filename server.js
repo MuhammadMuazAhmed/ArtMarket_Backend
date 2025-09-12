@@ -36,6 +36,9 @@ const __dirname = path.dirname(__filename);
 // Initialize app
 const app = express();
 
+// Trust proxy - required for rate limiting behind reverse proxies like Vercel
+app.set('trust proxy', 1);
+
 // ===========================================
 // SECURITY MIDDLEWARES (ORDER MATTERS!)
 // ===========================================
@@ -108,11 +111,26 @@ app.use("/api/purchases", purchaseRoutes);
 // ERROR HANDLING MIDDLEWARE
 // ===========================================
 
+// Root route handler
+app.get('/', (req, res) => {
+  res.json({
+    message: "Art Market API Server",
+    version: "1.0.0",
+    endpoints: {
+      health: "/api/health",
+      auth: "/api/auth/*",
+      artworks: "/api/artworks/*",
+      users: "/api/users/*",
+      purchases: "/api/purchases/*"
+    }
+  });
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
     error: "Route not found",
-    message: "The requested endpoint does not exist",
+    message: "The requested endpoint does not exist. Available endpoints: /api/health, /api/auth/*, /api/artworks/*, /api/users/*, /api/purchases/*",
   });
 });
 
