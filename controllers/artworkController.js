@@ -18,11 +18,9 @@ export const createArtwork = async (req, res) => {
     // Handle image URL or file upload
     let imageUrl = req.body.imageUrl;
 
-    // If a file was uploaded, use its path
-    if (req.file) {
-      // Create URL for the uploaded file
-      const baseUrl = `${req.protocol}://${req.get("host")}`;
-      imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
+    // If a file was uploaded to Cloudinary, use its URL
+    if (req.file && req.file.cloudinaryUrl) {
+      imageUrl = req.file.cloudinaryUrl;
     }
 
     // Validate that we have an image
@@ -120,11 +118,9 @@ export const updateArtwork = async (req, res) => {
     // Handle image URL or file upload
     let imageUrl = req.body.imageUrl;
 
-    // If a file was uploaded, use its path
-    if (req.file) {
-      // Create URL for the uploaded file
-      const baseUrl = `${req.protocol}://${req.get("host")}`;
-      imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
+    // If a file was uploaded to Cloudinary, use its URL
+    if (req.file && req.file.cloudinaryUrl) {
+      imageUrl = req.file.cloudinaryUrl;
     }
 
     // Use existing image if no new image is provided

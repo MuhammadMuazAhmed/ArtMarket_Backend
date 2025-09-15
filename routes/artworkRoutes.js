@@ -7,7 +7,10 @@ import {
   deleteArtwork,
 } from "../controllers/artworkController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
-import upload, { handleUploadError } from "../middleware/uploadMiddleware.js";
+import upload, {
+  handleUploadError,
+  uploadToCloudinary,
+} from "../middleware/uploadMiddleware.js";
 import {
   validateArtworkCreation,
   validateArtworkUpdate,
@@ -23,6 +26,7 @@ router.post(
   authMiddleware,
   upload.single("image"),
   handleUploadError,
+  uploadToCloudinary,
   validateArtworkCreation,
   createArtwork
 );
@@ -33,6 +37,7 @@ router.put(
   authMiddleware,
   upload.single("image"),
   handleUploadError,
+  uploadToCloudinary,
   validateArtworkUpdate,
   updateArtwork
 );

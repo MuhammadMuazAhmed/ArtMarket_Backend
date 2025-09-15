@@ -1,32 +1,6 @@
 import multer from "multer";
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Ensure destination directory exists
-const ensureDir = (dirPath) => {
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
-  }
-};
-
-const destDir = path.join(__dirname, "../uploads/profilepics/");
-ensureDir(destDir);
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, destDir);
-  },
-  filename: function (req, file, cb) {
-    const timestamp = Date.now();
-    const randomSuffix = Math.random().toString(36).substring(2, 10);
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `profile-${timestamp}-${randomSuffix}${ext}`);
-  },
-});
+import cloudinary from "../config/cloudinay.js";
+import streamifier from "streamifier";
 
 const fileFilter = (req, file, cb) => {
   if (!file.mimetype.startsWith("image/")) {
@@ -35,10 +9,50 @@ const fileFilter = (req, file, cb) => {
   cb(null, true);
 };
 
+// Configure multer to use memory storage
 const uploadProfilePic = multer({
-  storage,
+  storage: multer.memoryStorage(),
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024, files: 1 },
 });
+
+// Middleware to upload profile picture to Cloudinary
+export const uploadProfileToCloudinary = async (req, res, next) => {
+  if (!req.file) return next();
+
+  try {
+    const streamUpload = (fileBuffer) => {
+      return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "profiles",
+            resource_type: "image",
+            transformation: [
+              { width: 400, height: 400, crop: "fill" },
+              { quality: "auto" },
+              { fetch_format: "auto" },
+            ],
+          },
+          (error, result) => {
+            if (result) {
+              resolve(result);
+            } else {
+              reject(error);
+            }
+          }
+        );
+        streamifier.createReadStream(fileBuffer).pipe(stream);
+      });
+    };
+
+    const result = await streamUpload(req.file.buffer);
+    req.file.cloudinaryUrl = result.secure_url;
+    next();
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: "Profile picture upload failed", message: error.message });
+  }
+};
 
 export default uploadProfilePic;

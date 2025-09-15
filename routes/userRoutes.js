@@ -14,7 +14,9 @@ import {
   validateContactUpdate,
   validateProfileUpdate,
 } from "../middleware/validation.js";
-import uploadProfilePic from "../middleware/profileUploadMiddleware.js";
+import uploadProfilePic, {
+  uploadProfileToCloudinary,
+} from "../middleware/profileUploadMiddleware.js";
 
 const router = express.Router();
 
@@ -42,6 +44,7 @@ router.put(
   "/:userId/profile",
   authMiddleware,
   uploadProfilePic.single("profilePic"),
+  uploadProfileToCloudinary,
   validateProfileUpdate,
   updateUserProfile
 );

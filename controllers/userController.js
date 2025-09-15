@@ -116,10 +116,9 @@ export const updateUserProfile = async (req, res) => {
       if (req.body[key] !== undefined) update[key] = req.body[key];
     }
 
-    // If a profile picture file is uploaded, set its URL
-    if (req.file) {
-      const baseUrl = `${req.protocol}://${req.get("host")}`;
-      update.profilePic = `${baseUrl}/uploads/profilepics/${req.file.filename}`;
+    // If a profile picture was uploaded to Cloudinary, use its URL
+    if (req.file && req.file.cloudinaryUrl) {
+      update.profilePic = req.file.cloudinaryUrl;
     }
 
     const user = await User.findByIdAndUpdate(userId, update, { new: true });
