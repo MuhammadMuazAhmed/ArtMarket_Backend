@@ -83,7 +83,13 @@ export const corsOptions = {
       ...envOrigins,
     ].filter(Boolean);
 
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    // Check if origin matches allowed origins
+    const isAllowed = allowedOrigins.some(allowedOrigin => origin === allowedOrigin);
+    
+    // Also allow any *.vercel.app domain for deployment previews
+    const isVercelDomain = origin && origin.match(/^https:\/\/.*\.vercel\.app$/);
+
+    if (isAllowed || isVercelDomain) {
       callback(null, true);
     } else {
       console.warn(`CORS blocked origin: ${origin}`);
