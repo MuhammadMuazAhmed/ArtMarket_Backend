@@ -41,7 +41,7 @@
   ],
   "env": {
     "NODE_ENV": "production",
-    "MONGO_URI": "mongodb+srv://muhammadmuazahmed_db_user:wEbhv3c7Z0x93K0m@cluster0.wdbn9ei.mongodb.net/artmarketplace",
+    "MONGO_URI": "mongodb+srv://muhammadmuazahmed_db_user:wEbhv3c7Z0x93K0m@cluster0.wdbn9ei.mongodb.net/artmarketplace?retryWrites=true&w=majority&serverSelectionTimeoutMS=30000",
     "JWT_SECRET": "your_super_secret_jwt_key_here_make_it_long_and_secure_123456789",
     "CORS_ORIGINS": "https://art-market-tau.vercel.app,https://art-market-frontend.vercel.app,https://art-market-beta.vercel.app"
   }

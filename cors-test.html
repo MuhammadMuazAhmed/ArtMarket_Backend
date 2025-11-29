@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 3px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>CORS Test for Art Market Backend</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Health Check (GET)</h2>
+        <button onclick="testHealthCheck()">Test Health Check</button>
+        <div id="health-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Preflight Request (OPTIONS)</h2>
+        <button onclick="testPreflight()">Test Preflight</button>
+        <div id="preflight-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Create Artwork (POST)</h2>
+        <button onclick="testCreateArtwork()">Test Create Artwork</button>
+        <div id="create-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://art-market-backend.vercel.app';
+
+        async function testHealthCheck() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                const corsHeader = response.headers.get('Access-Control-Allow-Origin');
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    <strong>✅ Success!</strong><br>
+                    Status: ${response.status}<br>
+                    CORS Header: ${corsHeader || 'NOT PRESENT'}<br>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+            }
+        }
+
+        async function testPreflight() {
+            const resultDiv = document.getElementById('preflight-result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/artworks/create`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+                
+                const allowOrigin = response.headers.get('Access-Control-Allow-Origin');
+                const allowMethods = response.headers.get('Access-Control-Allow-Methods');
+                const allowHeaders = response.headers.get('Access-Control-Allow-Headers');
+                
+                resultDiv.className = 'result ' + (allowOrigin ? 'success' : 'error');
+                resultDiv.innerHTML = `
+                    <strong>${allowOrigin ? '✅' : '❌'} Preflight Response</strong><br>
+                    Status: ${response.status}<br>
+                    Access-Control-Allow-Origin: ${allowOrigin || 'NOT PRESENT'}<br>
+                    Access-Control-Allow-Methods: ${allowMethods || 'NOT PRESENT'}<br>
+                    Access-Control-Allow-Headers: ${allowHeaders || 'NOT PRESENT'}
+                `;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+            }
+        }
+
+        async function testCreateArtwork() {
+            const resultDiv = document.getElementById('create-result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            const testData = new FormData();
+            testData.append('title', 'Test Artwork');
+            testData.append('description', 'CORS Test');
+            testData.append('price', '100');
+            testData.append('category', 'painting');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/artworks/create`, {
+                    method: 'POST',
+                    body: testData,
+                    credentials: 'include'
+                });
+                
+                const corsHeader = response.headers.get('Access-Control-Allow-Origin');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ Success!</strong><br>
+                        Status: ${response.status}<br>
+                        CORS Header: ${corsHeader || 'NOT PRESENT'}<br>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <strong>❌ Failed</strong><br>
+                        Status: ${response.status}<br>
+                        CORS Header: ${corsHeader || 'NOT PRESENT'}<br>
+                        Error: ${errorText}
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

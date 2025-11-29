@@ -86,35 +86,69 @@ app.use(
 // DATABASE CONNECTION
 // ===========================================
 
+// MongoDB connection configuration optimized for serverless
+const mongooseOptions = {
+  serverSelectionTimeoutMS: 30000, // Increase timeout to 30 seconds for serverless cold starts
+  socketTimeoutMS: 45000, // Socket timeout
+  maxPoolSize: 10, // Limit connection pool for serverless
+  minPoolSize: 1,
+  maxIdleTimeMS: 10000, // Close idle connections after 10 seconds
+  retryWrites: true,
+  retryReads: true,
+  connectTimeoutMS: 30000, // Connection timeout
+};
+
 // Initialize MongoDB connection (non-blocking for serverless)
 let dbConnectionPromise = null;
 const connectDB = async () => {
   if (mongoose.connection.readyState === 1) {
-    return; // Already connected
+    return mongoose.connection; // Already connected
+  }
+  
+  if (mongoose.connection.readyState === 2) {
+    // Connection is in progress, wait for it
+    return dbConnectionPromise;
   }
   
   if (!dbConnectionPromise) {
-    dbConnectionPromise = mongoose.connect(config.MONGO_URI)
+    console.log("🔄 Attempting MongoDB connection...");
+    dbConnectionPromise = mongoose.connect(config.MONGO_URI, mongooseOptions)
       .then(() => {
         console.log("✅ MongoDB connected successfully");
+        return mongoose.connection;
       })
       .catch((err) => {
-        console.error("❌ MongoDB connection error:", err);
+        console.error("❌ MongoDB connection error:", err.message);
         dbConnectionPromise = null; // Reset so it can retry
+        throw err;
       });
   }
   
   return dbConnectionPromise;
 };
 
+// Middleware to ensure DB connection before handling requests
+const ensureDbConnection = async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("Database connection failed:", error.message);
+    res.status(503).json({
+      error: "Service temporarily unavailable",
+      message: "Database connection failed. Please try again in a moment."
+    });
+  }
+};
+
 // Start connection attempt but don't block serverless function
-connectDB();
+connectDB().catch(err => console.error("Initial connection attempt failed:", err.message));
 
 // ===========================================
 // API ROUTES
 // ===========================================
 
-// Health Check Route (before other routes)
+// Health Check Route (before other routes) - no DB check needed
 app.get("/api/health", (req, res) => {
   const dbStatus =
     mongoose.connection.readyState === 1 ? "connected" : "disconnected";
@@ -130,10 +164,11 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-app.use("/api/auth", authRoutes);
-app.use("/api/artworks", artworkRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/purchases", purchaseRoutes);
+// Apply DB connection middleware to all API routes (except health check)
+app.use("/api/auth", ensureDbConnection, authRoutes);
+app.use("/api/artworks", ensureDbConnection, artworkRoutes);
+app.use("/api/users", ensureDbConnection, userRoutes);
+app.use("/api/purchases", ensureDbConnection, purchaseRoutes);
 
 // Root route handler
 app.get("/", (req, res) => {
