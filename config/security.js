@@ -66,6 +66,11 @@ export const corsOptions = {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
+    // Get additional origins from environment variable
+    const envOrigins = process.env.CORS_ORIGINS
+      ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+      : [];
+
     const allowedOrigins = [
       "http://localhost:3000",
       "http://localhost:5173",
@@ -74,11 +79,14 @@ export const corsOptions = {
       "https://art-market-frontend.vercel.app",
       "https://art-market.vercel.app",
       "https://art-market-beta.vercel.app",
+      "https://art-market-tau.vercel.app",
+      ...envOrigins,
     ].filter(Boolean);
 
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.warn(`CORS blocked origin: ${origin}`);
       callback(new Error("Not allowed by CORS"));
     }
   },
@@ -98,6 +106,8 @@ export const corsOptions = {
     "X-RateLimit-Remaining",
   ],
   maxAge: 86400, // 24 hours
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
 };
 
 // Data sanitization middleware

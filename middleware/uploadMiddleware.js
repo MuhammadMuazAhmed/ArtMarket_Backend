@@ -54,8 +54,8 @@ export const uploadToCloudinary = async (req, res, next) => {
     return res
       .status(500)
       .json({ error: "Cloudinary upload failed", message: error.message });
-  }
-};
+    };
+  };
 
 export const handleUploadError = (error, req, res, next) => {
   if (error instanceof multer.MulterError) {
