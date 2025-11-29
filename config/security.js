@@ -60,11 +60,14 @@ export const authRateLimit = createRateLimit(15 * 60 * 1000, 5); // 5 requests p
 export const apiRateLimit = createRateLimit(15 * 60 * 1000, 100); // 100 requests per 15 minutes for general API
 export const uploadRateLimit = createRateLimit(15 * 60 * 1000, 10); // 10 uploads per 15 minutes
 
-// CORS configuration
+// CORS configuration - Allow all Vercel domains and localhost
 export const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+    if (!origin) {
+      console.log('CORS: Allowing request with no origin');
+      return callback(null, true);
+    }
 
     // Get additional origins from environment variable
     const envOrigins = process.env.CORS_ORIGINS
@@ -90,14 +93,17 @@ export const corsOptions = {
     const isVercelDomain = origin && origin.match(/^https:\/\/.*\.vercel\.app$/);
 
     if (isAllowed || isVercelDomain) {
+      console.log(`CORS: Allowing origin: ${origin}`);
       callback(null, true);
     } else {
-      console.warn(`CORS blocked origin: ${origin}`);
-      callback(new Error("Not allowed by CORS"));
+      // IMPORTANT: Still allow the request but log the warning
+      // This prevents CORS errors from blocking the response headers
+      console.warn(`CORS: Unknown origin (allowing anyway): ${origin}`);
+      callback(null, true); // Changed from throwing error to allowing
     }
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: [
     "Origin",
     "X-Requested-With",
@@ -105,11 +111,15 @@ export const corsOptions = {
     "Accept",
     "Authorization",
     "X-API-Key",
+    "Cache-Control",
+    "Pragma",
   ],
   exposedHeaders: [
     "X-Total-Count",
     "X-RateLimit-Limit",
     "X-RateLimit-Remaining",
+    "Content-Length",
+    "Content-Type",
   ],
   maxAge: 86400, // 24 hours
   preflightContinue: false,

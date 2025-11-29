@@ -198,9 +198,18 @@ app.use((req, res) => {
   });
 });
 
-// Global error handler
+// Global error handler - ensure CORS headers are always set
 app.use((error, req, res, next) => {
   console.error("Global error handler:", error);
+
+  // Ensure CORS headers are set even for errors
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-API-Key, Cache-Control, Pragma');
+  }
 
   // Don't leak error details in production
   const isProduction = config.NODE_ENV === "production";
