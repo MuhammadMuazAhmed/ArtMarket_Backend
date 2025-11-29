@@ -40,14 +40,13 @@ const app = express();
 app.set("trust proxy", 1);
 
 // ===========================================
-// SECURITY MIDDLEWARES (ORDER MATTERS!)
-// ===========================================
+// SECURITY MIDDLEWARES (ORDER MATTERS!)\n// ===========================================
 
-// 1. Helmet for HTTP headers protection
-app.use(helmetConfig);
-
-// 2. CORS with restricted origins
+// 1. CORS FIRST - Must be before Helmet to ensure CORS headers are always sent
 app.use(cors(corsOptions));
+
+// 2. Helmet for HTTP headers protection
+app.use(helmetConfig);
 
 // 3. Security headers
 app.use(securityHeaders);
@@ -87,17 +86,29 @@ app.use(
 // DATABASE CONNECTION
 // ===========================================
 
-// Initialize MongoDB connection
-try {
-  await mongoose.connect(config.MONGO_URI);
-  console.log("✅ MongoDB connected successfully");
-} catch (err) {
-  console.error("❌ MongoDB connection error:", err);
-  // Don't exit the process on connection error in production
-  if (process.env.NODE_ENV !== "production") {
-    process.exit(1);
+// Initialize MongoDB connection (non-blocking for serverless)
+let dbConnectionPromise = null;
+const connectDB = async () => {
+  if (mongoose.connection.readyState === 1) {
+    return; // Already connected
   }
-}
+  
+  if (!dbConnectionPromise) {
+    dbConnectionPromise = mongoose.connect(config.MONGO_URI)
+      .then(() => {
+        console.log("✅ MongoDB connected successfully");
+      })
+      .catch((err) => {
+        console.error("❌ MongoDB connection error:", err);
+        dbConnectionPromise = null; // Reset so it can retry
+      });
+  }
+  
+  return dbConnectionPromise;
+};
+
+// Start connection attempt but don't block serverless function
+connectDB();
 
 // ===========================================
 // API ROUTES
